@@ -503,6 +503,19 @@ class AutoFixtureBase(object):
         tries = self.tries
         instance = self.model()
         process = instance._meta.fields
+        
+        if hasattr(instance, 'translations'):
+            from django.conf import settings
+            languages = settings.LANGUAGES
+            for language, other in languages:
+                instance.set_current_language(language)
+                translated_fields = instance.translations.model._meta.fields
+                excluded_fields = (u'id', 'language_code', u'master_id')
+                for translated_field in translated_fields:
+                    attribute_name = translated_field.attname
+                    if attribute_name not in excluded_fields:
+                        self.process_field(instance, translated_field)
+
         while process and tries > 0:
             for field in process:
                 self.process_field(instance, field)
